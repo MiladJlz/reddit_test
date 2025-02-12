@@ -6,7 +6,6 @@ import (
 )
 
 type Vote struct {
-	ID     uuid.UUID `gorm:"primaryKey;type:uuid" json:"id"`
 	UserID uuid.UUID `gorm:"primaryKey;type:uuid" json:"userID" validate:"uuid"`
 	PostID uuid.UUID `gorm:"primaryKey;type:uuid;index" json:"postID" validate:"required,uuid"`
 	Value  int       `json:"value" validate:"required,voteValue"`

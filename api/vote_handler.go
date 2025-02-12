@@ -20,8 +20,6 @@ func NewVoteHandler(voteStore db.VoteStore, postStore db.PostStore) *VoteHandler
 
 func (h *VoteHandler) AddVote(c fiber.Ctx) error {
 	vote := c.Locals("vote").(types.Vote)
-	voteID, err := uuid.NewUUID()
-	vote.ID = voteID
 	b, err := h.postStore.HasUserVoted(vote.UserID, vote.PostID)
 	if err != nil {
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": fmt.Sprintf(" %v", err)})
