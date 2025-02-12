@@ -22,19 +22,19 @@ func (h *PostHandler) CreatePost(c fiber.Ctx) error {
 	post := c.Locals("post").(types.Post)
 	postID, err := uuid.NewUUID()
 	if err != nil {
-		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": fmt.Sprintf(" %v", err)})
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": "failed creating uuid for post"})
 	}
 	post.ID = postID
 	res, err := h.postStore.InsertPost(&post)
 	if err != nil {
-		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": fmt.Sprintf(" %v", err)})
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": "failed inserting post to DB"})
 	}
 	return c.Status(fiber.StatusCreated).JSON(res)
 }
 func ValidateCreatePost(c fiber.Ctx) error {
 	post := types.Post{}
 	if err := c.Bind().Body(&post); err != nil {
-		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"invalid request body": fmt.Sprintf(" %v", err)})
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": "invalid request body"})
 	}
 	param := c.Params("id")
 	userID, err := uuid.Parse(param)

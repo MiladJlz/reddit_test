@@ -2,6 +2,7 @@ package db
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"github.com/joho/godotenv"
 	"github.com/miladjlz/reddit_test/types"
@@ -23,29 +24,29 @@ type DBConfig struct {
 func NewDBConfig() (*DBConfig, error) {
 	err := godotenv.Load()
 	if err != nil {
-		return nil, fmt.Errorf("error loading .env file")
+		return nil, errors.New("failed to initializing postgres")
 	}
 
 	port := os.Getenv("SERVER_PORT")
 	postgresDB, err := initPostgres()
 	if err != nil {
-		return nil, fmt.Errorf("failed to initializing postgres")
+		return nil, errors.New("failed to initializing postgres")
 	}
 	redisDB, err := initRedis()
 	if err != nil {
-		return nil, fmt.Errorf("failed to initializing redis")
+		return nil, errors.New("failed to initializing redis")
 	}
 	postStore, err := NewDBPostStore(postgresDB, redisDB)
 	if err != nil {
-		return nil, fmt.Errorf("failed to create post store")
+		return nil, errors.New("failed to create post store")
 	}
 	userStore, err := NewPostgresUserStore(postgresDB)
 	if err != nil {
-		return nil, fmt.Errorf("failed to create user store")
+		return nil, errors.New("failed to create user store")
 	}
 	voteStore, err := NewPostgresVoteStore(postgresDB)
 	if err != nil {
-		return nil, fmt.Errorf("failed to create vote store")
+		return nil, errors.New("failed to create vote store")
 	}
 	return &DBConfig{
 		PostgresClient: postgresDB,
@@ -68,10 +69,10 @@ func initPostgres() (*gorm.DB, error) {
 
 	pdb, err := gorm.Open(postgres.Open(dsn), &gorm.Config{})
 	if err != nil {
-		return nil, fmt.Errorf("failed to connect to posgres")
+		return nil, errors.New("failed to connect to postgres")
 	}
 	if err := pdb.AutoMigrate(&types.User{}, &types.Post{}, &types.Vote{}); err != nil {
-		return nil, fmt.Errorf("failed to migrate database")
+		return nil, errors.New("failed to migrate database")
 	}
 	return pdb, nil
 }
@@ -87,7 +88,7 @@ func initRedis() (*redis.Client, error) {
 	})
 
 	if err := rdb.Ping(context.Background()).Err(); err != nil {
-		return nil, fmt.Errorf("failed to connect to Redis")
+		return nil, errors.New("failed to connect to Redis")
 	}
 	return rdb, nil
 }
