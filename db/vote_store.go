@@ -23,10 +23,10 @@ func (s *PostgresVoteStore) InsertVote(vote *types.Vote) (*types.Vote, error) {
 			tx.Rollback()
 		}
 	}()
-	result := tx.Table("votes").Create(&vote)
-	if result.Error != nil {
+	err := tx.Table("votes").Create(&vote).Error
+	if err != nil {
 		tx.Rollback()
-		return nil, result.Error
+		return nil, err
 	}
 	if result := tx.Table("posts").Where("id = ?", vote.PostID).Update("vote_count", gorm.Expr("vote_count + ?", 1)); result.Error != nil {
 		tx.Rollback()

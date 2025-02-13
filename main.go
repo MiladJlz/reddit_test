@@ -22,28 +22,35 @@ func main() {
 		postHandler = api.NewPostHandler(config.PostStore)
 		voteHandler = api.NewVoteHandler(config.VoteStore, config.PostStore)
 		userHandler = api.NewUserHandler(config.UserStore)
+		v1          = app.Group("/v1")
 	)
 
 	//vote route
-	app.Post("/vote/:id", voteHandler.AddVote, api.ValidateAddVote)
+	v1.Post("/vote/:id", voteHandler.AddVote, api.ValidateAddVote)
 
 	//user route
-	app.Post("/register", userHandler.CreateUser, api.ValidateCreateUser)
+	v1.Post("/register", userHandler.CreateUser, api.ValidateCreateUser)
 
 	//post route
-	app.Post("/post/:id", postHandler.CreatePost, api.ValidateCreatePost)
-	app.Get("/posts", postHandler.GetPosts)
-	app.Get("/posts/vote", postHandler.GetPostsByVote)
-	app.Get("/posts/order", postHandler.GetPostsByOrder, api.ValidateGetPostsByOrder)
+	v1.Post("/post/:id", postHandler.CreatePost, api.ValidateCreatePost)
+	v1.Get("/posts", postHandler.GetPosts)
+	v1.Get("/posts/vote", postHandler.GetPostsByVote)
+	v1.Get("/posts/order", postHandler.GetPostsByOrder, api.ValidateGetPostsByOrder)
 
 	var postsMutex sync.Mutex
 	go func() {
 		for {
 			time.Sleep(time.Second * 5)
 			postsMutex.Lock()
-			result, _ := config.PostStore.GetPostsByScoreFromPostgres()
+			result, err := config.PostStore.GetPostsByScoreFromPostgres()
+			if err != nil {
+				log.Fatal(err)
+			}
 			if (len(result)) != 0 {
-				postsJSON, _ := json.Marshal(result)
+				postsJSON, err := json.Marshal(result)
+				if err != nil {
+					log.Fatal(err)
+				}
 				err = config.RedisClient.Set(context.Background(), "high_voted_posts", postsJSON, time.Second*5).Err()
 			}
 			postsMutex.Unlock()

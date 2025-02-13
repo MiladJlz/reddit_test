@@ -1,7 +1,6 @@
 package api
 
 import (
-	"fmt"
 	"github.com/gofiber/fiber/v3"
 	"github.com/google/uuid"
 	"github.com/miladjlz/reddit_test/db"
@@ -20,35 +19,34 @@ func NewVoteHandler(voteStore db.VoteStore, postStore db.PostStore) *VoteHandler
 
 func (h *VoteHandler) AddVote(c fiber.Ctx) error {
 	vote := c.Locals("vote").(types.Vote)
-	b, err := h.postStore.HasUserVoted(vote.UserID, vote.PostID)
-	if err != nil {
-		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": fmt.Sprintf(" %v", err)})
-	}
-	if b == false {
+	res, err := h.postStore.HasUserVoted(vote.UserID, vote.PostID)
+	if res == false && err != nil {
+		return c.Status(fiber.StatusInternalServerError).JSON(ErrFailedGettingData("vote"))
+	} else if res == false {
 		res, err := h.voteStore.InsertVote(&vote)
 		if err != nil {
-			return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": fmt.Sprintf(" %v", err)})
+			return c.Status(fiber.StatusInternalServerError).JSON(ErrFailedInsertingData("vote"))
 		}
 		return c.Status(fiber.StatusCreated).JSON(res)
 	} else {
-		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": "user already voted"})
+		return c.Status(fiber.StatusBadRequest).JSON(ErrVoteConflict())
 	}
 
 }
 func ValidateAddVote(c fiber.Ctx) error {
-	vote := types.Vote{}
-	if err := c.Bind().Body(&vote); err != nil {
-		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"invalid request body": fmt.Sprintf(" %v", err)})
-	}
-	if err := vote.Validate(); err != nil {
-		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"validation errors": fmt.Sprintf(" %v", err)})
-
+	voteParams := types.CreateVoteParams{}
+	if err := c.Bind().Body(&voteParams); err != nil {
+		return c.Status(fiber.StatusBadRequest).JSON(ErrInvalidRequestBody())
 	}
 	param := c.Params("id")
 	userID, err := uuid.Parse(param)
 	if err != nil {
-		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"invalid userID": " must be a UUID"})
+		return c.Status(fiber.StatusBadRequest).JSON(ErrInvalidPathParam())
 	}
+	if errors := voteParams.Validate(); len(errors) > 0 {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": errors})
+	}
+	vote := types.NewVoteFromParams(voteParams)
 	vote.UserID = userID
 	c.Locals("vote", vote)
 	return c.Next()

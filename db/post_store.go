@@ -4,7 +4,6 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
-	"fmt"
 	"github.com/google/uuid"
 	"github.com/miladjlz/reddit_test/types"
 	"github.com/redis/go-redis/v9"
@@ -64,7 +63,6 @@ func (s *DBPostStore) GetPostsByScoreFromPostgres() ([]types.Post, error) {
 func (s *DBPostStore) GetPostsByVote() ([]types.Post, error) {
 	var posts []types.Post
 	exists, err := s.redisClient.Exists(context.Background(), "high_voted_posts").Result()
-	fmt.Println(exists)
 	if err != nil {
 		return nil, err
 	}

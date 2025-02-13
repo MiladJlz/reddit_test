@@ -1,13 +1,18 @@
 package types
 
 import (
-	"github.com/go-playground/validator/v10"
+	"fmt"
 	"github.com/google/uuid"
 	"time"
 )
 
+const (
+	minTitleLen       = 6
+	minDescriptionLen = 10
+)
+
 type Post struct {
-	ID          uuid.UUID `gorm:"primaryKey;type:uuid" json:"id" validate:"uuid"`
+	ID          uuid.UUID `gorm:"primaryKey;type:uuid" json:"id"`
 	Title       string    `json:"title" validate:"required,gte=6"`
 	Description string    `json:"description" validate:"required,gte=10"`
 	UserID      uuid.UUID `gorm:"type:uuid" json:"userID"`
@@ -15,8 +20,25 @@ type Post struct {
 	VoteCount   int       `gorm:"default:0" json:"voteCount"`
 	CreatedAt   time.Time
 }
+type CreatePostParams struct {
+	Title       string `json:"title"`
+	Description string `json:"description"`
+}
 
-func (p *Post) Validate() error {
-	validate := validator.New()
-	return validate.Struct(p)
+func (params CreatePostParams) Validate() map[string]string {
+	errors := map[string]string{}
+	if len(params.Title) < minTitleLen {
+		errors["title"] = fmt.Sprintf("title length should be at least %d characters", minTitleLen)
+	}
+	if len(params.Description) < minDescriptionLen {
+		errors["description"] = fmt.Sprintf("description length should be at least %d characters", minDescriptionLen)
+	}
+
+	return errors
+}
+func NewPostFromParams(params CreatePostParams) Post {
+	return Post{
+		Title:       params.Title,
+		Description: params.Description,
+	}
 }

@@ -12,6 +12,12 @@ import (
 	"os"
 )
 
+var (
+	ErrLoadingEnvFile       = "error loading .env file"
+	ErrInitializingDatabase = "failed to initializing Database"
+	ErrInitializingTable    = "failed to initializing table"
+)
+
 type DBConfig struct {
 	PostgresClient *gorm.DB
 	RedisClient    *redis.Client
@@ -24,29 +30,29 @@ type DBConfig struct {
 func NewDBConfig() (*DBConfig, error) {
 	err := godotenv.Load()
 	if err != nil {
-		return nil, errors.New("failed to initializing postgres")
+		return nil, errors.New(ErrLoadingEnvFile)
 	}
 
 	port := os.Getenv("SERVER_PORT")
 	postgresDB, err := initPostgres()
 	if err != nil {
-		return nil, errors.New("failed to initializing postgres")
+		return nil, fmt.Errorf(ErrInitializingDatabase+"%s", "postgres")
 	}
 	redisDB, err := initRedis()
 	if err != nil {
-		return nil, errors.New("failed to initializing redis")
+		return nil, fmt.Errorf(ErrInitializingDatabase+"%s", "redis")
 	}
 	postStore, err := NewDBPostStore(postgresDB, redisDB)
 	if err != nil {
-		return nil, errors.New("failed to create post store")
+		return nil, fmt.Errorf(ErrInitializingTable+"%s", "post")
 	}
 	userStore, err := NewPostgresUserStore(postgresDB)
 	if err != nil {
-		return nil, errors.New("failed to create user store")
+		return nil, fmt.Errorf(ErrInitializingTable+"%s", "user")
 	}
 	voteStore, err := NewPostgresVoteStore(postgresDB)
 	if err != nil {
-		return nil, errors.New("failed to create vote store")
+		return nil, fmt.Errorf(ErrInitializingTable+"%s", "vote")
 	}
 	return &DBConfig{
 		PostgresClient: postgresDB,

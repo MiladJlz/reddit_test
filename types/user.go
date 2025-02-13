@@ -1,18 +1,33 @@
 package types
 
 import (
-	"github.com/go-playground/validator/v10"
+	"fmt"
 	"github.com/google/uuid"
+)
+
+const (
+	minUsernameLen = 6
 )
 
 type User struct {
 	ID       uuid.UUID `gorm:"primaryKey;type:uuid" json:"id"`
-	Username string    `json:"username" validate:"required,gte=6"`
+	Username string    `json:"username"`
 	Vote     []Vote    `gorm:"foreignKey:UserID;references:ID" json:"-"`
 }
 
-func (u *User) Validate() error {
-	validate := validator.New()
-	return validate.Struct(u)
+type CreateUserParam struct {
+	Username string `json:"username"`
+}
 
+func (params CreateUserParam) Validate() map[string]string {
+	errors := map[string]string{}
+	if len(params.Username) < minUsernameLen {
+		errors["title"] = fmt.Sprintf("username length should be at least %d characters", minUsernameLen)
+	}
+	return errors
+}
+func NewUserFromParams(params CreateUserParam) User {
+	return User{
+		Username: params.Username,
+	}
 }
