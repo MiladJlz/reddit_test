@@ -13,8 +13,8 @@ const (
 
 type Post struct {
 	ID          uuid.UUID `gorm:"primaryKey;type:uuid" json:"id"`
-	Title       string    `json:"title" validate:"required,gte=6"`
-	Description string    `json:"description" validate:"required,gte=10"`
+	Title       string    `json:"title"`
+	Description string    `json:"description"`
 	UserID      uuid.UUID `gorm:"type:uuid" json:"userID"`
 	Votes       []Vote    `gorm:"foreignKey:PostID;references:ID" json:"-"`
 	VoteCount   int       `gorm:"default:0" json:"voteCount"`
